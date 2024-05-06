@@ -16,24 +16,28 @@ except ModuleNotFoundError:
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as cp
 from ocpp.v201 import call_result
+from ocpp.v201 import call
 
 logging.basicConfig(level=logging.INFO)
 
 
-class ChargePoint(cp):
+class CentralSystem(cp):
+
+    interval = 10
+    
     @on("BootNotification")
     def on_boot_notification(self, charging_station, reason, **kwargs):
+        #TODO: Add rejection case
         return call_result.BootNotificationPayload(
-            current_time=datetime.utcnow().isoformat(), interval=10, status="Accepted"
+            current_time=datetime.now().isoformat(), interval=self.interval, status="Accepted"
         )
 
     @on("Heartbeat")
     def on_heartbeat(self):
         print("Got a Heartbeat!")
         return call_result.HeartbeatPayload(
-            current_time=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+            current_time=datetime.now().strftime("%Y-%m-%dT%H:%M:%S") + "Z"
         )
-
 
 async def on_connect(websocket, path):
     """For every new charge point that connects, create a ChargePoint
@@ -45,7 +49,7 @@ async def on_connect(websocket, path):
         logging.error("Client hasn't requested any Subprotocol. Closing Connection")
         return await websocket.close()
     if websocket.subprotocol:
-        logging.info("Protocols Matched: %s", websocket.subprotocol)
+        logging.info("Protocols Matched: %s | %s", websocket.subprotocol, path)
     else:
         # In the websockets lib if no subprotocols are supported by the
         # client and the server, it proceeds without a subprotocol,
@@ -59,7 +63,8 @@ async def on_connect(websocket, path):
         return await websocket.close()
 
     charge_point_id = path.strip("/")
-    charge_point = ChargePoint(charge_point_id, websocket)
+    charge_point = CentralSystem(charge_point_id, websocket)
+    logging.info(f"NEW CONNECTION: {charge_point_id}")
 
     await charge_point.start()
 
@@ -67,7 +72,7 @@ async def on_connect(websocket, path):
 async def main():
     #  deepcode ignore BindToAllNetworkInterfaces: <Example Purposes>
     server = await websockets.serve(
-        on_connect, "0.0.0.0", 9000, subprotocols=["ocpp2.0.1"]
+        on_connect, "0.0.0.0", 9002, subprotocols=["ocpp2.0.1"],ping_interval=None
     )
 
     logging.info("Server Started listening to new connections...")
