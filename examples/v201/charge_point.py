@@ -58,10 +58,7 @@ class ChargePoint(cp):
             results = {'Data hora':data_hora, 
                         'RTT': self.round_trip_times
                         }
-            if os.path.exists(filename):
-                mode = "a"  # If the file exists, open it in append mode
-            else:
-                mode = "w"  # If the file doesn't exist, open it in write mode
+            mode = "w"  # If the file doesn't exist, open it in write mode
             with open(filename, mode) as arquivo:
                 json.dump(results, arquivo)
                 arquivo.write('\n')
