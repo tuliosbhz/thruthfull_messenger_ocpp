@@ -81,9 +81,9 @@ def discover_devices_on_network(ip_range):
     result = srp(packet, timeout=3, verbose=False)[0]
     
     devices = []
+    devices.append({'ip': "localhost", 'mac': ""}) #Primeiro adicione o localhost para o caso em que o CSMS e CP estiverem no mesmo dispositivo
     for sent, received in result:
         devices.append({'ip': received.psrc, 'mac': received.hwsrc})
-    devices.append({'ip': "localhost", 'mac': ""}) if len(devices) == 0 else None
     return devices
 
 async def main(charger_id):
