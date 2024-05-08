@@ -22,6 +22,8 @@ except ModuleNotFoundError:
 from ocpp.v201 import ChargePoint as cp
 from ocpp.v201 import call
 
+from messages_handler.heartbet_handler import send_heartbeat
+
 logging.basicConfig(level=logging.INFO)
 
 class ChargePoint(cp):
@@ -32,11 +34,7 @@ class ChargePoint(cp):
     async def send_heartbeat(self, interval):
         request = call.HeartbeatPayload()
         while True:
-            sent_time = time.time()
-            await self.call(request)
-            self.round_trip_times.append(time.time() - sent_time)
-            await asyncio.sleep(interval)
-            await self.write_key_performance_indicators()
+            send_heartbeat(self, request,interval)
 
     async def send_boot_notification(self):
         request = call.BootNotificationPayload(
